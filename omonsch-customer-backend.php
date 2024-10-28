@@ -2,7 +2,7 @@
 /*
 Plugin Name: Oliver Monschau - Customer Backend
 Description: Customizes the WordPress admin area for customers.
-Version: 0.1.3
+Version: v0.1.4
 Author: Oliver Monschau, Michael Amting
 */
 
