@@ -76,23 +76,29 @@ if (!class_exists('WP_GitHub_Updater')) {
     }
 }
 add_filter('upgrader_source_selection', function($source, $remote_source, $upgrader) {
-    $plugin_slug = 'omonsch-customer-backend';  // Der gewünschte Plugin-Ordnername
+    $plugin_slug = 'omonsch-customer-backend'; // Der gewünschte Plugin-Ordnername
+    $corrected_path = trailingslashit(WP_PLUGIN_DIR) . $plugin_slug;
 
-    // Prüfen, ob der Ordnername vom gewünschten Plugin-Slug abweicht
-    if (strpos($source, $plugin_slug) === false) {
-        $corrected_path = trailingslashit(dirname($source)) . $plugin_slug;
+    // Debugging-Log: Pfade vor der Umbenennung
+    error_log("Debugging: Original-Ordnerpfad ist {$source}");
+    error_log("Debugging: Ziel-Ordnerpfad ist {$corrected_path}");
 
-        // Umbenennen des Verzeichnisses in den gewünschten Ordnernamen
+    // Prüfen, ob der Ordner bereits den gewünschten Namen hat
+    if (basename($source) !== $plugin_slug) {
+        // Versuche, den Ordner umzubenennen
         if (rename($source, $corrected_path)) {
-            return $corrected_path;  // Korrigierter Pfad wird zurückgegeben
+            error_log("Ordner erfolgreich von {$source} nach {$corrected_path} umbenannt.");
+            return $corrected_path; // Korrigierter Pfad wird zurückgegeben
         } else {
-            // Fehlerprotokollierung, falls Umbenennen fehlschlägt
-            error_log("Fehler beim Umbenennen des Plugin-Ordners von {$source} nach {$corrected_path}");
+            // Fehlerprotokollierung bei fehlgeschlagenem Umbenennen
+            error_log("Fehler: Das Umbenennen des Plugin-Ordners von {$source} nach {$corrected_path} ist fehlgeschlagen.");
             return new WP_Error('rename_failed', __('Das Umbenennen des Plugin-Ordners ist fehlgeschlagen.'));
         }
+    } else {
+        error_log("Ordnername ist korrekt, keine Umbenennung erforderlich.");
     }
-
     return $source;
 }, 10, 3);
+
 
 
