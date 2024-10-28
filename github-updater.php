@@ -54,6 +54,4 @@ if (!class_exists('WP_GitHub_Updater')) {
             ];
         }
     }
-
-    new WP_GitHub_Updater(plugin_basename(__FILE__));
 }

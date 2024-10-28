@@ -10,6 +10,7 @@ defined('ABSPATH') or die('No script kiddies please!');
 
 // Automatically update plugin from GitHub
 require_once plugin_dir_path(__FILE__) . 'github-updater.php';
+new WP_GitHub_Updater(plugin_basename(__FILE__));
 
 // Include admin customizations
 require_once plugin_dir_path(__FILE__) . 'admin-customizations.php';
