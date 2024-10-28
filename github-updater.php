@@ -76,22 +76,22 @@ if (!class_exists('WP_GitHub_Updater')) {
     }
 }
 add_filter('upgrader_source_selection', function($source, $remote_source, $upgrader) {
-    global $wp_filesystem;
+    $plugin_slug = 'omonsch-customer-backend';  // Der gewünschte Plugin-Ordnername
 
-    // Nur für dieses Plugin
-    $plugin_slug = 'omonsch-customer-backend';
-
-    // Prüfen, ob der Ordner dem Plugin-Slug entspricht
-    if (strpos($source, $plugin_slug) !== false && basename($source) !== $plugin_slug) {
+    // Prüfen, ob der Ordnername vom gewünschten Plugin-Slug abweicht
+    if (strpos($source, $plugin_slug) === false) {
         $corrected_path = trailingslashit(dirname($source)) . $plugin_slug;
 
-        // Umbenennen des Ordners in den gewünschten Namen
-        if ($wp_filesystem->move($source, $corrected_path, true)) {
-            return $corrected_path;
+        // Umbenennen des Verzeichnisses in den gewünschten Ordnernamen
+        if (rename($source, $corrected_path)) {
+            return $corrected_path;  // Korrigierter Pfad wird zurückgegeben
         } else {
+            // Fehlerprotokollierung, falls Umbenennen fehlschlägt
+            error_log("Fehler beim Umbenennen des Plugin-Ordners von {$source} nach {$corrected_path}");
             return new WP_Error('rename_failed', __('Das Umbenennen des Plugin-Ordners ist fehlgeschlagen.'));
         }
     }
+
     return $source;
 }, 10, 3);
 
