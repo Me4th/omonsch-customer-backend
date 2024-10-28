@@ -1,12 +1,15 @@
 <?php
 /*
-Plugin Name: Oliver Monschau - Digitales Marketing
+Plugin Name: Oliver Monschau - Customer Backend
 Description: Customizes the WordPress admin area for customers.
-Version: 1.0
+Version: 0.1
 Author: Oliver Monschau, Michael Amting
 */
 
 defined('ABSPATH') or die('No script kiddies please!');
+
+// Automatically update plugin from GitHub
+require_once plugin_dir_path(__FILE__) . 'github-updater.php';
 
 // Include admin customizations
 require_once plugin_dir_path(__FILE__) . 'admin-customizations.php';
