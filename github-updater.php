@@ -76,16 +76,14 @@ if (!class_exists('WP_GitHub_Updater')) {
         }
     }
 }
-// Filter: Umbenennen im temporären Verzeichnis
+// Temporären Upgrade-Pfad umbenennen
 add_filter('upgrader_source_selection', function($source, $remote_source, $upgrader) {
-    $plugin_slug = 'omonsch-customer-backend'; // Der gewünschte Plugin-Ordnername
+    $plugin_slug = 'omonsch-customer-backend';
     $corrected_path = trailingslashit(dirname($source)) . $plugin_slug;
 
-    // Debugging-Logs
     error_log("Original-Ordnerpfad im Upgrade-Verzeichnis: {$source}");
     error_log("Umbenennung im temporären Verzeichnis nach: {$corrected_path}");
 
-    // Prüfen und Umbenennen im temporären Verzeichnis
     if (basename($source) !== $plugin_slug) {
         if (rename($source, $corrected_path)) {
             error_log("Temporärer Ordner erfolgreich in {$corrected_path} umbenannt.");
@@ -98,16 +96,15 @@ add_filter('upgrader_source_selection', function($source, $remote_source, $upgra
     return $source;
 }, 10, 3);
 
-// Filter: Finaler Ordnername nach Installation sicherstellen
+// Finalen Plugin-Ordnerpfad überprüfen und ggf. korrigieren
 add_filter('upgrader_post_install', function ($response, $hook_extra, $result) {
     $plugin_slug = 'omonsch-customer-backend';
     $corrected_path = trailingslashit(WP_PLUGIN_DIR) . $plugin_slug;
 
-    // Debugging-Logs
     error_log("Entpackter Zielordner im Plugins-Verzeichnis: " . $result['destination']);
-    error_log("Finaler Ordnerpfad sollte sein: {$corrected_path}");
+    error_log("Erwarteter finaler Ordnerpfad: {$corrected_path}");
 
-    // Falls der Ordner abweicht, wird er nach dem Upgrade-Vorgang umbenannt
+    // Überprüfen und Umbenennen im finalen Plugin-Verzeichnis
     if (basename($result['destination']) !== $plugin_slug) {
         if (rename($result['destination'], $corrected_path)) {
             error_log("Finaler Ordnername erfolgreich in {$corrected_path} geändert.");
@@ -116,6 +113,9 @@ add_filter('upgrader_post_install', function ($response, $hook_extra, $result) {
             error_log("Fehler beim Umbenennen des finalen Plugin-Ordners.");
             return new WP_Error('rename_failed', __('Umbenennen des finalen Plugin-Ordners fehlgeschlagen.'));
         }
+    } else {
+        error_log("Finaler Ordnername korrekt, keine Umbenennung erforderlich.");
     }
+
     return $response;
 }, 10, 3);
