@@ -21,10 +21,14 @@ if (!class_exists('WP_GitHub_Updater')) {
         private function getRepoReleaseInfo() {
             if (is_null($this->githubAPIResult)) {
                 $requestUri = "https://api.github.com/repos/{$this->githubRepo}/releases/latest";
-                $response = wp_remote_get($requestUri);
+                $args = [
+                    'headers' => [
+                        'Authorization' => 'token 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'
+                    ]
+                ];
+                $response = wp_remote_get($requestUri, $args);
                 $this->githubAPIResult = json_decode(wp_remote_retrieve_body($response), true);
             }
-            error_log("GitHub API Response: " . print_r($this->githubAPIResult, true));
             return $this->githubAPIResult;
         }
 
