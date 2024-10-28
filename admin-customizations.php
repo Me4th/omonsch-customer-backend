@@ -87,12 +87,28 @@ function add_custom_admin_banner() {
 add_action('admin_notices', 'add_custom_admin_banner', 20);
 
 function show_update_banner() {
-    // Check for updates
+    // Prüfen auf Plugin-, Theme- und Core-Updates (ohne Lokalisierungen)
     $update_plugins = get_site_transient('update_plugins');
     $update_themes = get_site_transient('update_themes');
+    $update_core = get_site_transient('update_core');
 
-    if ( ($update_plugins && !empty($update_plugins->response)) || ($update_themes && !empty($update_themes->response)) ) {
-        // Get last update timestamp
+    // Prüfen, ob echte Plugin- oder Theme-Updates verfügbar sind
+    $plugin_updates_available = !empty($update_plugins->response);
+    $theme_updates_available = !empty($update_themes->response);
+
+    // Core-Updates filtern, nur wichtige Updates (keine Lokalisierungen)
+    $core_update_available = false;
+    if (!empty($update_core->updates)) {
+        foreach ($update_core->updates as $core_update) {
+            if ($core_update->response == 'upgrade' && empty($core_update->locale)) {
+                $core_update_available = true;
+                break;
+            }
+        }
+    }
+
+    // Banner nur anzeigen, wenn es Plugin-, Theme- oder relevante Core-Updates gibt
+    if ($plugin_updates_available || $theme_updates_available || $core_update_available) {
         $last_update = get_option('last_update_time');
         $last_update_display = $last_update ? date('d.m.Y \u\m H:i', $last_update) : 'unbekannt';
 
@@ -107,17 +123,14 @@ function show_update_banner() {
                     <span id="close-banner">&times;</span>
                     <p>Es gibt ausstehende Updates für Ihre Website. Die letzte vollständige Aktualisierung hat am ' . $last_update_display . ' stattgefunden.</p>
                     <style>
-                        /* The alert message box */
                         #update-banner {
                           padding: 2px 20px;
-                          background-color: #f44336; /* Red */
+                          background-color: #f44336;
                           color: white;
                           margin-bottom: 15px;
                           margin-right: 20px;
                           position: relative;
                         }
-                        
-                        /* The close button */
                         #close-banner {
                             margin-left: 15px;
                             color: white;
@@ -132,8 +145,6 @@ function show_update_banner() {
                             transform: translateY(-58%);
                             right: 20px;
                         }
-                        
-                        /* When moving the mouse over the close button */
                         #close-banner:hover {
                           color: black;
                         }
