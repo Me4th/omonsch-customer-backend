@@ -101,4 +101,23 @@ add_filter('upgrader_source_selection', function($source, $remote_source, $upgra
     return $source;
 }, 10, 3);
 
+add_filter('upgrader_post_install', function ($true, $hook_extra, $result) {
+    $plugin_slug = 'omonsch-customer-backend'; // Der gewünschte Plugin-Ordnername
+    $corrected_path = trailingslashit(WP_PLUGIN_DIR) . $plugin_slug;
 
+    // Debugging-Log: endgültiges Verzeichnis überprüfen
+    error_log("Debugging: Entpacktes Verzeichnis ist " . $result['destination']);
+    error_log("Debugging: Soll umbenannt werden nach {$corrected_path}");
+
+    // Falls der Plugin-Ordner falsch benannt ist, wird er umbenannt
+    if (basename($result['destination']) !== $plugin_slug) {
+        if (rename($result['destination'], $corrected_path)) {
+            error_log("Ordner im finalen Verzeichnis erfolgreich in {$corrected_path} umbenannt.");
+            $result['destination'] = $corrected_path;
+        } else {
+            error_log("Fehler: Das Umbenennen des finalen Plugin-Ordners von {$result['destination']} nach {$corrected_path} ist fehlgeschlagen.");
+            return new WP_Error('rename_failed', __('Das Umbenennen des finalen Plugin-Ordners ist fehlgeschlagen.'));
+        }
+    }
+    return $true;
+}, 10, 3);
