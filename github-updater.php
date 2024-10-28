@@ -21,10 +21,11 @@ if (!class_exists('WP_GitHub_Updater')) {
         private function getRepoReleaseInfo() {
             if (is_null($this->githubAPIResult)) {
                 $requestUri = "https://api.github.com/repos/{$this->githubRepo}/releases/latest";
+                $token = defined('GITHUB_API_TOKEN') ? GITHUB_API_TOKEN : '';
                 $args = [
                     'headers' => [
-                        'Authorization' => 'Bearer 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',  // Nutze Bearer statt token
-                        'User-Agent' => 'WordPress-Updater'  // GitHub benötigt oft einen User-Agent
+                        'Authorization' => 'Bearer ' . $token,
+                        'User-Agent' => 'WordPress-Updater'
                     ]
                 ];
                 $response = wp_remote_get($requestUri, $args);
