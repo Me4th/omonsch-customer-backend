@@ -23,11 +23,15 @@ if (!class_exists('WP_GitHub_Updater')) {
                 $requestUri = "https://api.github.com/repos/{$this->githubRepo}/releases/latest";
                 $args = [
                     'headers' => [
-                        'Authorization' => 'token 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'
+                        'Authorization' => 'Bearer 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',  // Nutze Bearer statt token
+                        'User-Agent' => 'WordPress-Updater'  // GitHub benötigt oft einen User-Agent
                     ]
                 ];
                 $response = wp_remote_get($requestUri, $args);
                 $this->githubAPIResult = json_decode(wp_remote_retrieve_body($response), true);
+
+                // Log für vollständige Antwort zur Überprüfung
+                error_log("GitHub API Full Response with Token: " . print_r($this->githubAPIResult, true));
             }
             return $this->githubAPIResult;
         }
