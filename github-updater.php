@@ -77,13 +77,13 @@ if (!class_exists('WP_GitHub_Updater')) {
 }
 add_filter('upgrader_source_selection', function($source, $remote_source, $upgrader) {
     $plugin_slug = 'omonsch-customer-backend'; // Der gewünschte Plugin-Ordnername
-    $corrected_path = trailingslashit(WP_PLUGIN_DIR) . $plugin_slug;
+    $corrected_path = trailingslashit(dirname($source)) . $plugin_slug;
 
     // Debugging-Log: Pfade vor der Umbenennung
     error_log("Debugging: Original-Ordnerpfad ist {$source}");
     error_log("Debugging: Ziel-Ordnerpfad ist {$corrected_path}");
 
-    // Prüfen, ob der Ordner bereits den gewünschten Namen hat
+    // Prüfen, ob der Ordnername vom gewünschten Namen abweicht
     if (basename($source) !== $plugin_slug) {
         // Versuche, den Ordner umzubenennen
         if (rename($source, $corrected_path)) {
@@ -99,6 +99,5 @@ add_filter('upgrader_source_selection', function($source, $remote_source, $upgra
     }
     return $source;
 }, 10, 3);
-
 
 
