@@ -66,4 +66,13 @@ if (!class_exists('WP_GitHub_Updater')) {
             ];
         }
     }
+    add_action('upgrader_process_complete', function ($upgrader_object, $options) {
+        if ($options['action'] == 'update' && $options['type'] === 'plugin') {
+            $plugin_dir = WP_PLUGIN_DIR . '/Me4th-omonsch-customer-backend-1a51f4d';
+            $new_plugin_dir = WP_PLUGIN_DIR . '/omonsch-customer-backend';
+            if (is_dir($plugin_dir)) {
+                rename($plugin_dir, $new_plugin_dir);
+            }
+        }
+    }, 10, 2);
 }
