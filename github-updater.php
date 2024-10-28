@@ -7,10 +7,11 @@ if (!class_exists('WP_GitHub_Updater')) {
         private $githubRepo;
         private $pluginData;
         private $githubAPIResult;
+        private $slug;
 
         public function __construct($pluginFile) {
-            $this->pluginFile = $pluginFile;
-            $this->slug = plugin_basename($pluginFile); // Sicherstellen, dass der Slug richtig gesetzt ist
+            $this->pluginFile = plugin_basename($pluginFile); // Basis-Name des Plugins
+            $this->slug = dirname($this->pluginFile); // Sicherstellen, dass der Slug korrekt gesetzt ist
             $this->githubRepo = 'Me4th/omonsch-customer-backend'; // Repository-Name
 
             add_filter("pre_set_site_transient_update_plugins", [$this, "setPluginTransient"]);
@@ -43,21 +44,28 @@ if (!class_exists('WP_GitHub_Updater')) {
                 return $transient;
             }
             $releaseInfo = $this->getRepoReleaseInfo();
-            $latestVersion = $releaseInfo['tag_name'];
-            $currentVersion = $transient->checked[$this->pluginFile];
-            error_log("Aktuelle Version: " . $currentVersion);
-            error_log("Neueste Version auf GitHub: " . $latestVersion);
-            if (version_compare($currentVersion, $latestVersion, '<')) {
-                $transient->response[$this->pluginFile] = (object) [
-                    'slug' => $this->pluginFile,
-                    'new_version' => $latestVersion,
-                    'package' => $releaseInfo['zipball_url']
-                ];
-            }
-            if (!empty($transient->response[$this->pluginFile])) {
-                error_log("Update für Plugin verfügbar: " . print_r($transient->response[$this->pluginFile], true));
+            if (isset($releaseInfo['tag_name'])) {
+                $latestVersion = $releaseInfo['tag_name'];
+                $currentVersion = $transient->checked[$this->pluginFile] ?? '';
+
+                error_log("Aktuelle Version: " . $currentVersion);
+                error_log("Neueste Version auf GitHub: " . $latestVersion);
+
+                if (version_compare($currentVersion, $latestVersion, '<')) {
+                    $transient->response[$this->pluginFile] = (object) [
+                        'slug' => $this->slug,
+                        'new_version' => $latestVersion,
+                        'package' => $releaseInfo['zipball_url']
+                    ];
+                }
+
+                if (!empty($transient->response[$this->pluginFile])) {
+                    error_log("Update für Plugin verfügbar: " . print_r($transient->response[$this->pluginFile], true));
+                } else {
+                    error_log("Kein Update verfügbar.");
+                }
             } else {
-                error_log("Kein Update verfügbar.");
+                error_log("Fehler beim Abrufen der neuesten Version. 'tag_name' fehlt.");
             }
             return $transient;
         }
@@ -67,12 +75,17 @@ if (!class_exists('WP_GitHub_Updater')) {
             if ($args->slug !== $this->slug) return $result; // Korrektur beim Slug-Vergleich
 
             $releaseInfo = $this->getRepoReleaseInfo();
-            return (object) [
-                'name' => 'Oliver Monschau - Customer Backend',
-                'slug' => $this->slug,
-                'version' => $releaseInfo['tag_name'],
-                'download_link' => $releaseInfo['zipball_url'],
-            ];
+            if (isset($releaseInfo['tag_name'])) {
+                return (object) [
+                    'name' => 'Oliver Monschau - Customer Backend',
+                    'slug' => $this->slug,
+                    'version' => $releaseInfo['tag_name'],
+                    'download_link' => $releaseInfo['zipball_url'],
+                ];
+            } else {
+                error_log("Fehler: Release-Informationen nicht verfügbar");
+                return $result;
+            }
         }
     }
 }
