@@ -20,7 +20,7 @@ add_action('wp_before_admin_bar_render', 'remove_wp_logo_from_admin_bar', 0);
 function customize_admin_menu() {
     global $submenu;
 
-    // Entferne nur die spezifischen Untermenüpunkte unter Design und anderen Bereichen
+    // Remove specific submenu items under Appearance and other sections
     remove_submenu_page('themes.php', 'theme-editor.php');              // Hide "Appearance" -> "Theme Editor"
     remove_submenu_page('plugins.php', 'plugin-editor.php');            // Hide "Plugins" -> "Plugin Editor"
     remove_submenu_page('options-general.php', 'options-writing.php');  // Hide "Settings" -> "Writing"
@@ -28,19 +28,20 @@ function customize_admin_menu() {
     remove_submenu_page('options-general.php', 'options-discussion.php'); // Hide "Settings" -> "Discussion"
     remove_submenu_page('options-general.php', 'options-media.php');    // Hide "Settings" -> "Media"
     remove_submenu_page('options-general.php', 'options-permalink.php'); // Hide "Settings" -> "Permalinks"
-    remove_submenu_page('options-general.php', 'privacy.php');          // Hide "Settings" -> "Privacy"
 }
 add_action('admin_menu', 'customize_admin_menu', 999);
 
-// Ensure "Appearance" menu is accessible for "Kunde" role
-function ensure_appearance_menu_for_customer() {
+// Ensure "Appearance" menu and Pages are accessible for "Kunde" role
+function ensure_menu_access_for_customer() {
     $role = get_role('kunde');
     if ($role) {
-        // Hinzufügen von Berechtigungen, falls nicht vorhanden
-        $role->add_cap('edit_theme_options');  // Customizer und Design-Optionen verfügbar machen
+        $role->add_cap('edit_theme_options');    // Enable Customizer and Appearance options
+        $role->add_cap('edit_pages');            // Enable access to Pages for the "Kunde" role
+        $role->add_cap('edit_published_pages');  // Enable editing published pages
+        $role->add_cap('edit_others_pages');     // Enable editing others' pages
     }
 }
-add_action('admin_init', 'ensure_appearance_menu_for_customer');
+add_action('admin_init', 'ensure_menu_access_for_customer');
 
 // Remove WordPress version from footer
 function remove_wp_version_footer() {
@@ -87,16 +88,13 @@ function add_custom_admin_banner() {
 add_action('admin_notices', 'add_custom_admin_banner', 20);
 
 function show_update_banner() {
-    // Prüfen auf Plugin-, Theme- und Core-Updates (ohne Lokalisierungen)
     $update_plugins = get_site_transient('update_plugins');
     $update_themes = get_site_transient('update_themes');
     $update_core = get_site_transient('update_core');
 
-    // Prüfen, ob echte Plugin- oder Theme-Updates verfügbar sind
     $plugin_updates_available = !empty($update_plugins->response);
     $theme_updates_available = !empty($update_themes->response);
 
-    // Core-Updates filtern, nur wichtige Updates (keine Lokalisierungen)
     $core_update_available = false;
     if (!empty($update_core->updates)) {
         foreach ($update_core->updates as $core_update) {
@@ -107,7 +105,6 @@ function show_update_banner() {
         }
     }
 
-    // Banner nur anzeigen, wenn es Plugin-, Theme- oder relevante Core-Updates gibt
     if ($plugin_updates_available || $theme_updates_available || $core_update_available) {
         $last_update = get_option('last_update_time');
         $last_update_display = $last_update ? date('d.m.Y \u\m H:i', $last_update) : 'unbekannt';

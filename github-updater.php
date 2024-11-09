@@ -12,7 +12,7 @@ if (!class_exists('WP_GitHub_Updater')) {
 
         public function __construct($pluginFile) {
             $this->pluginFile = $pluginFile;
-            $this->slug = plugin_basename($pluginFile); // Sicherstellen, dass der Slug korrekt ist
+            $this->slug = 'omonsch_customer_backend'; // Hardcoded slug to ensure the directory name
             $this->githubRepo = 'Me4th/omonsch-customer-backend'; // GitHub-Repository
 
             add_filter("pre_set_site_transient_update_plugins", [$this, "setPluginTransient"]);
@@ -23,7 +23,7 @@ if (!class_exists('WP_GitHub_Updater')) {
         private function getRepoReleaseInfo() {
             if (is_null($this->githubAPIResult)) {
                 $requestUri = "https://api.github.com/repos/{$this->githubRepo}/releases/latest";
-                $token = defined('GITHUB_API_TOKEN') ? GITHUB_API_TOKEN : '';
+                $token = defined('GITHUB_API_TOKEN') ? GITHUB_API_TOKEN : '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';
                 $args = [
                     'headers' => [
                         'Authorization' => 'Bearer ' . $token,
@@ -61,7 +61,7 @@ if (!class_exists('WP_GitHub_Updater')) {
             // Prüfen und Transient setzen, wenn Update verfügbar
             if (version_compare($currentVersion, $latestVersion, '<')) {
                 $transient->response[$this->pluginFile] = (object) [
-                    'slug' => $this->pluginFile,
+                    'slug' => 'omonsch_customer_backend', // Hardcoded slug for consistent directory naming
                     'new_version' => $latestVersion,
                     'package' => $releaseInfo['zipball_url']
                 ];
@@ -75,7 +75,7 @@ if (!class_exists('WP_GitHub_Updater')) {
 
         // Plugin-Informationen für den WordPress-Updater bereitstellen
         public function setPluginInfo($result, $action, $args) {
-            if ($action !== 'plugin_information' || $args->slug !== $this->slug) {
+            if ($action !== 'plugin_information' || $args->slug !== 'omonsch_customer_backend') {
                 return $result;
             }
 
@@ -89,7 +89,7 @@ if (!class_exists('WP_GitHub_Updater')) {
 
             $pluginInfo = (object) [
                 'name' => 'Oliver Monschau - Customer Backend',
-                'slug' => $this->slug,
+                'slug' => 'omonsch_customer_backend', // Hardcoded slug
                 'version' => $releaseInfo['tag_name'],
                 'download_link' => $releaseInfo['zipball_url'],
             ];
@@ -99,3 +99,4 @@ if (!class_exists('WP_GitHub_Updater')) {
         }
     }
 }
+?>
