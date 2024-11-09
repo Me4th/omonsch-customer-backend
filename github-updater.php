@@ -22,6 +22,8 @@ if (!class_exists('WP_GitHub_Updater')) {
         // GitHub Release-Info abrufen
         private function getRepoReleaseInfo() {
             if (is_null($this->githubAPIResult)) {
+                error_log("Versuche, GitHub-Release-Info abzurufen...");
+
                 $requestUri = "https://api.github.com/repos/{$this->githubRepo}/releases/latest";
                 $token = defined('GITHUB_API_TOKEN') ? GITHUB_API_TOKEN : '';
                 $args = [
@@ -31,43 +33,60 @@ if (!class_exists('WP_GitHub_Updater')) {
                     ]
                 ];
                 $response = wp_remote_get($requestUri, $args);
-                $this->githubAPIResult = json_decode(wp_remote_retrieve_body($response), true);
 
-                // Ausführliches Log der API-Antwort zur Überprüfung
-                error_log("GitHub API Full Response: " . print_r($this->githubAPIResult, true));
+                // Überprüfen, ob die API-Antwort erfolgreich war
+                if (is_wp_error($response)) {
+                    error_log("Fehler: API-Anfrage fehlgeschlagen - " . $response->get_error_message());
+                    return null;
+                }
+
+                $body = wp_remote_retrieve_body($response);
+                $this->githubAPIResult = json_decode($body, true);
+
+                if (empty($this->githubAPIResult)) {
+                    error_log("Fehler: Leere oder ungültige API-Antwort erhalten.");
+                } else {
+                    error_log("GitHub API Full Response: " . print_r($this->githubAPIResult, true));
+                }
+            } else {
+                error_log("GitHub-Release-Info wurde bereits abgerufen.");
             }
             return $this->githubAPIResult;
         }
 
         // Transient für Plugin-Update setzen
         public function setPluginTransient($transient) {
+            error_log("Starte setPluginTransient...");
+
             if (empty($transient->checked)) {
+                error_log("Kein Plugin-Check in diesem Transient-Durchlauf.");
                 return $transient;
             }
+
             $releaseInfo = $this->getRepoReleaseInfo();
 
-            // Sicherstellen, dass die tag_name vorhanden ist
-            if (isset($releaseInfo['tag_name'])) {
-                $latestVersion = $releaseInfo['tag_name'];
-            } else {
-                error_log("Fehler: tag_name fehlt in der GitHub-Antwort.");
+            // Prüfen, ob tag_name vorhanden ist und loggen, falls nicht
+            if (!isset($releaseInfo['tag_name']) || !isset($releaseInfo['zipball_url'])) {
+                error_log("Fehler: tag_name oder zipball_url fehlen in der GitHub-Antwort.");
                 return $transient;
             }
 
+            $latestVersion = $releaseInfo['tag_name'];
             $currentVersion = $transient->checked[$this->pluginFile] ?? '';
-            error_log("Aktuelle Version: " . $currentVersion);
+            error_log("Aktuelle Plugin-Version: " . $currentVersion);
             error_log("Neueste Version auf GitHub: " . $latestVersion);
 
             // Prüfen und Transient setzen, wenn Update verfügbar
             if (version_compare($currentVersion, $latestVersion, '<')) {
                 $transient->response[$this->pluginFile] = (object) [
-                    'slug' => 'omonsch_customer_backend', // Hardcoded slug for consistent directory naming
+                    'slug' => 'omonsch_customer_backend', // Harte Kodierung des Plugin-Ordners
                     'new_version' => $latestVersion,
-                    'package' => $releaseInfo['zipball_url']
+                    'package' => $releaseInfo['zipball_url'],
+                    'plugin' => 'omonsch_customer_backend/omonsch_customer_backend.php' // Vollständiger Pfad zur Haupt-Plugin-Datei
                 ];
                 error_log("Update für Plugin verfügbar: " . print_r($transient->response[$this->pluginFile], true));
             } else {
-                error_log("Kein Update verfügbar.");
+                error_log("Kein Update für Plugin erforderlich.");
             }
 
             return $transient;
@@ -75,13 +94,16 @@ if (!class_exists('WP_GitHub_Updater')) {
 
         // Plugin-Informationen für den WordPress-Updater bereitstellen
         public function setPluginInfo($result, $action, $args) {
+            error_log("Rufe setPluginInfo auf...");
+
             if ($action !== 'plugin_information' || $args->slug !== 'omonsch_customer_backend') {
+                error_log("Aktion oder Slug stimmen nicht überein. Aktion: $action, Slug: " . $args->slug);
                 return $result;
             }
 
             $releaseInfo = $this->getRepoReleaseInfo();
 
-            // Sicherstellen, dass tag_name und zipball_url existieren
+            // Überprüfen, ob tag_name und zipball_url vorhanden sind
             if (!isset($releaseInfo['tag_name']) || !isset($releaseInfo['zipball_url'])) {
                 error_log("Fehler: tag_name oder zipball_url fehlen in der GitHub-Antwort.");
                 return $result;
@@ -89,12 +111,13 @@ if (!class_exists('WP_GitHub_Updater')) {
 
             $pluginInfo = (object) [
                 'name' => 'Oliver Monschau - Customer Backend',
-                'slug' => 'omonsch_customer_backend', // Hardcoded slug
+                'slug' => 'omonsch_customer_backend', // Harte Kodierung des Plugin-Ordners
                 'version' => $releaseInfo['tag_name'],
                 'download_link' => $releaseInfo['zipball_url'],
+                'plugin' => 'omonsch_customer_backend/omonsch_customer_backend.php' // Vollständiger Pfad zur Haupt-Plugin-Datei
             ];
 
-            error_log("Plugin-Info erfolgreich bereitgestellt: " . print_r($pluginInfo, true));
+            error_log("Plugin-Informationen erfolgreich bereitgestellt: " . print_r($pluginInfo, true));
             return $pluginInfo;
         }
     }
