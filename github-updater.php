@@ -1,5 +1,4 @@
 <?php
-// GitHub Plugin Updater Class einfügen
 if (!class_exists('WP_GitHub_Updater')) {
     error_log("[WP_GitHub_Updater] GitHub Updater geladen");
 
@@ -12,15 +11,13 @@ if (!class_exists('WP_GitHub_Updater')) {
         public function __construct($pluginFile) {
             $this->pluginFile = $pluginFile;
             $this->slug = 'omonsch_customer_backend'; // Hardcoded slug
-            $this->githubRepo = 'Me4th/omonsch-customer-backend'; // GitHub-Repository
+            $this->githubRepo = 'Me4th/omonsch-customer-backend';
 
             add_filter("pre_set_site_transient_update_plugins", [$this, "setPluginTransient"]);
             add_filter("plugins_api", [$this, "setPluginInfo"], 10, 3);
-            add_filter("upgrader_source_selection", [$this, "renameExtractedFolder"], 10, 3);
-            add_action("upgrader_post_install", [$this, "checkInstallation"], 10, 3);
+            add_filter("upgrader_source_selection", [$this, "renameAndMoveFolder"], 10, 3);
         }
 
-        // GitHub Release-Info abrufen
         private function getRepoReleaseInfo() {
             if (is_null($this->githubAPIResult)) {
                 error_log("[getRepoReleaseInfo] Versuche, GitHub-Release-Info abzurufen...");
@@ -54,7 +51,6 @@ if (!class_exists('WP_GitHub_Updater')) {
             return $this->githubAPIResult;
         }
 
-        // Transient für Plugin-Update setzen
         public function setPluginTransient($transient) {
             error_log("[setPluginTransient] Starte setPluginTransient...");
 
@@ -88,7 +84,6 @@ if (!class_exists('WP_GitHub_Updater')) {
             return $transient;
         }
 
-        // Plugin-Informationen für den WordPress-Updater bereitstellen
         public function setPluginInfo($result, $action, $args) {
             error_log("[setPluginInfo] Rufe setPluginInfo auf...");
 
@@ -116,46 +111,30 @@ if (!class_exists('WP_GitHub_Updater')) {
             return $pluginInfo;
         }
 
-        // Extrahiertes Plugin-Verzeichnis während des Updates umbenennen
-        public function renameExtractedFolder($source, $remote_source, $upgrader) {
+        public function renameAndMoveFolder($source, $remote_source, $upgrader) {
             global $wp_filesystem;
 
-            error_log("[renameExtractedFolder] Original extrahiertes Verzeichnis: $source");
+            $finalDest = WP_PLUGIN_DIR . '/omonsch_customer_backend';
+            error_log("[renameAndMoveFolder] Original extrahiertes Verzeichnis: $source");
 
             if (strpos(basename($source), 'omonsch-customer-backend') !== false) {
-                $correctedPath = trailingslashit($remote_source) . 'omonsch_customer_backend';
-
-                if ($wp_filesystem->move($source, $correctedPath)) {
-                    error_log("[renameExtractedFolder] Verzeichnis erfolgreich in 'omonsch_customer_backend' umbenannt.");
-                    return $correctedPath;
-                } else {
-                    error_log("[renameExtractedFolder] Fehler beim Umbenennen des Verzeichnisses.");
-                    return new WP_Error('rename_failed', 'Das Plugin-Verzeichnis konnte nicht umbenannt werden.');
+                // Lösche das alte Verzeichnis, falls vorhanden
+                if ($wp_filesystem->is_dir($finalDest)) {
+                    $wp_filesystem->delete($finalDest, true);
+                    error_log("[renameAndMoveFolder] Altes Plugin-Verzeichnis gelöscht: $finalDest");
                 }
-            } else {
-                error_log("[renameExtractedFolder] Kein Umbenennen erforderlich.");
+
+                if ($wp_filesystem->move($source, $finalDest)) {
+                    error_log("[renameAndMoveFolder] Verzeichnis erfolgreich an Zielort '$finalDest' verschoben.");
+                    return $finalDest;
+                } else {
+                    error_log("[renameAndMoveFolder] Fehler beim Verschieben des Verzeichnisses.");
+                    return new WP_Error('move_failed', 'Das Plugin-Verzeichnis konnte nicht an den Zielort verschoben werden.');
+                }
             }
 
+            error_log("[renameAndMoveFolder] Kein Umbenennen/Verschieben erforderlich.");
             return $source;
-        }
-
-        // Überprüfen der Installation nach Abschluss des Upgrades
-        public function checkInstallation($true, $hook_extra, $result) {
-            error_log("[checkInstallation] Installation abgeschlossen. Überprüfe das Endverzeichnis.");
-
-            if (is_wp_error($result)) {
-                error_log("[checkInstallation] Fehler während der Installation: " . $result->get_error_message());
-                return $result;
-            }
-
-            $finalDir = WP_PLUGIN_DIR . '/omonsch_customer_backend';
-            if (is_dir($finalDir)) {
-                error_log("[checkInstallation] Endverzeichnis ist korrekt: $finalDir");
-            } else {
-                error_log("[checkInstallation] Endverzeichnis fehlt oder ist falsch: $finalDir");
-            }
-
-            return $true;
         }
     }
 }
