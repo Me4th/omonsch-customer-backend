@@ -12,11 +12,12 @@ if (!class_exists('WP_GitHub_Updater')) {
 
         public function __construct($pluginFile) {
             $this->pluginFile = $pluginFile;
-            $this->slug = 'omonsch_customer_backend'; // Hardcoded slug to ensure the directory name
-            $this->githubRepo = 'Me4th/omonsch-customer-backend'; // GitHub-Repository
+            $this->slug = 'omonsch_customer_backend'; // Hardcoded slug for the directory
+            $this->githubRepo = 'Me4th/omonsch-customer-backend'; // GitHub repository
 
             add_filter("pre_set_site_transient_update_plugins", [$this, "setPluginTransient"]);
             add_filter("plugins_api", [$this, "setPluginInfo"], 10, 3);
+            add_action("upgrader_post_install", [$this, "renamePluginFolder"], 10, 3);
         }
 
         // GitHub Release-Info abrufen
@@ -34,7 +35,7 @@ if (!class_exists('WP_GitHub_Updater')) {
                 ];
                 $response = wp_remote_get($requestUri, $args);
 
-                // Überprüfen, ob die API-Antwort erfolgreich war
+                // Prüfen, ob die API-Antwort erfolgreich war
                 if (is_wp_error($response)) {
                     error_log("Fehler: API-Anfrage fehlgeschlagen - " . $response->get_error_message());
                     return null;
@@ -65,7 +66,6 @@ if (!class_exists('WP_GitHub_Updater')) {
 
             $releaseInfo = $this->getRepoReleaseInfo();
 
-            // Prüfen, ob tag_name vorhanden ist und loggen, falls nicht
             if (!isset($releaseInfo['tag_name']) || !isset($releaseInfo['zipball_url'])) {
                 error_log("Fehler: tag_name oder zipball_url fehlen in der GitHub-Antwort.");
                 return $transient;
@@ -73,16 +73,13 @@ if (!class_exists('WP_GitHub_Updater')) {
 
             $latestVersion = $releaseInfo['tag_name'];
             $currentVersion = $transient->checked[$this->pluginFile] ?? '';
-            error_log("Aktuelle Plugin-Version: " . $currentVersion);
-            error_log("Neueste Version auf GitHub: " . $latestVersion);
 
-            // Prüfen und Transient setzen, wenn Update verfügbar
             if (version_compare($currentVersion, $latestVersion, '<')) {
                 $transient->response[$this->pluginFile] = (object) [
-                    'slug' => 'omonsch_customer_backend', // Harte Kodierung des Plugin-Ordners
+                    'slug' => 'omonsch_customer_backend',
                     'new_version' => $latestVersion,
                     'package' => $releaseInfo['zipball_url'],
-                    'plugin' => 'omonsch_customer_backend/omonsch_customer_backend.php' // Vollständiger Pfad zur Haupt-Plugin-Datei
+                    'plugin' => 'omonsch_customer_backend/omonsch_customer_backend.php'
                 ];
                 error_log("Update für Plugin verfügbar: " . print_r($transient->response[$this->pluginFile], true));
             } else {
@@ -103,7 +100,6 @@ if (!class_exists('WP_GitHub_Updater')) {
 
             $releaseInfo = $this->getRepoReleaseInfo();
 
-            // Überprüfen, ob tag_name und zipball_url vorhanden sind
             if (!isset($releaseInfo['tag_name']) || !isset($releaseInfo['zipball_url'])) {
                 error_log("Fehler: tag_name oder zipball_url fehlen in der GitHub-Antwort.");
                 return $result;
@@ -111,14 +107,33 @@ if (!class_exists('WP_GitHub_Updater')) {
 
             $pluginInfo = (object) [
                 'name' => 'Oliver Monschau - Customer Backend',
-                'slug' => 'omonsch_customer_backend', // Harte Kodierung des Plugin-Ordners
+                'slug' => 'omonsch_customer_backend',
                 'version' => $releaseInfo['tag_name'],
                 'download_link' => $releaseInfo['zipball_url'],
-                'plugin' => 'omonsch_customer_backend/omonsch_customer_backend.php' // Vollständiger Pfad zur Haupt-Plugin-Datei
+                'plugin' => 'omonsch_customer_backend/omonsch_customer_backend.php'
             ];
 
             error_log("Plugin-Informationen erfolgreich bereitgestellt: " . print_r($pluginInfo, true));
             return $pluginInfo;
+        }
+
+        // Umbenennen des Plugin-Verzeichnisses nach der Installation
+        public function renamePluginFolder($true, $hook_extra, $result) {
+            global $wp_filesystem;
+
+            $pluginFolder = WP_PLUGIN_DIR . '/omonsch_customer_backend';
+            $source = trailingslashit($result['destination']);
+            $sourceName = basename($source);
+
+            if ($sourceName !== 'omonsch_customer_backend') {
+                $wp_filesystem->move($source, $pluginFolder);
+                $result['destination'] = $pluginFolder;
+                error_log("Plugin-Verzeichnis erfolgreich umbenannt auf 'omonsch_customer_backend'");
+            } else {
+                error_log("Plugin-Verzeichnis ist bereits korrekt benannt.");
+            }
+
+            return $result;
         }
     }
 }
