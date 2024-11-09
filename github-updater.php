@@ -17,7 +17,7 @@ if (!class_exists('WP_GitHub_Updater')) {
 
             add_filter("pre_set_site_transient_update_plugins", [$this, "setPluginTransient"]);
             add_filter("plugins_api", [$this, "setPluginInfo"], 10, 3);
-            add_action("upgrader_post_install", [$this, "renamePluginFolder"], 10, 3);
+            add_filter("upgrader_source_selection", [$this, "renameExtractedFolder"], 10, 3);
         }
 
         // GitHub Release-Info abrufen
@@ -117,23 +117,25 @@ if (!class_exists('WP_GitHub_Updater')) {
             return $pluginInfo;
         }
 
-        // Umbenennen des Plugin-Verzeichnisses nach der Installation
-        public function renamePluginFolder($true, $hook_extra, $result) {
+        // Extrahiertes Plugin-Verzeichnis während des Updates umbenennen
+        public function renameExtractedFolder($source, $remote_source, $upgrader) {
             global $wp_filesystem;
 
-            $pluginFolder = WP_PLUGIN_DIR . '/omonsch_customer_backend';
-            $source = trailingslashit($result['destination']);
-            $sourceName = basename($source);
+            // Prüfen, ob das extrahierte Verzeichnis einen Hash enthält
+            if (strpos(basename($source), 'omonsch-customer-backend') !== false) {
+                $correctedPath = trailingslashit($remote_source) . 'omonsch_customer_backend';
 
-            if ($sourceName !== 'omonsch_customer_backend') {
-                $wp_filesystem->move($source, $pluginFolder);
-                $result['destination'] = $pluginFolder;
-                error_log("Plugin-Verzeichnis erfolgreich umbenannt auf 'omonsch_customer_backend'");
-            } else {
-                error_log("Plugin-Verzeichnis ist bereits korrekt benannt.");
+                if ($wp_filesystem->move($source, $correctedPath)) {
+                    error_log("Verzeichnis erfolgreich in 'omonsch_customer_backend' umbenannt.");
+                    return $correctedPath;
+                } else {
+                    error_log("Fehler beim Umbenennen des Verzeichnisses.");
+                    return new WP_Error('rename_failed', 'Das Plugin-Verzeichnis konnte nicht umbenannt werden.');
+                }
             }
 
-            return $result;
+            error_log("Kein Umbenennen erforderlich.");
+            return $source;
         }
     }
 }
