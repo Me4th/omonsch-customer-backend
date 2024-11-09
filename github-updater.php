@@ -17,6 +17,7 @@ if (!class_exists('WP_GitHub_Updater')) {
             add_filter("pre_set_site_transient_update_plugins", [$this, "setPluginTransient"]);
             add_filter("plugins_api", [$this, "setPluginInfo"], 10, 3);
             add_filter("upgrader_source_selection", [$this, "renameExtractedFolder"], 10, 3);
+            add_action("upgrader_post_install", [$this, "checkInstallation"], 10, 3);
         }
 
         // GitHub Release-Info abrufen
@@ -136,6 +137,25 @@ if (!class_exists('WP_GitHub_Updater')) {
             }
 
             return $source;
+        }
+
+        // Überprüfen der Installation nach Abschluss des Upgrades
+        public function checkInstallation($true, $hook_extra, $result) {
+            error_log("[checkInstallation] Installation abgeschlossen. Überprüfe das Endverzeichnis.");
+
+            if (is_wp_error($result)) {
+                error_log("[checkInstallation] Fehler während der Installation: " . $result->get_error_message());
+                return $result;
+            }
+
+            $finalDir = WP_PLUGIN_DIR . '/omonsch_customer_backend';
+            if (is_dir($finalDir)) {
+                error_log("[checkInstallation] Endverzeichnis ist korrekt: $finalDir");
+            } else {
+                error_log("[checkInstallation] Endverzeichnis fehlt oder ist falsch: $finalDir");
+            }
+
+            return $true;
         }
     }
 }
