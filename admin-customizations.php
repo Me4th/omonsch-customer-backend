@@ -40,6 +40,7 @@ function ensure_menu_access_for_customer() {
         $role->add_cap('edit_published_pages');  // Enable editing published pages
         $role->add_cap('edit_others_pages');     // Enable editing others' pages
         $role->add_cap('edit_others_posts');     // Enable editing others' posts
+        $role->add_cap('edit_published_posts');     // Enable editing others' posts
         $role->add_cap('upload_files');         // Ensure media files can be managed
     }
 }
