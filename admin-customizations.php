@@ -169,4 +169,18 @@ function set_last_update_time() {
 }
 add_action('upgrader_process_complete', 'set_last_update_time', 10, 2);
 
+// Custom Login Logo
+// Set "https://cdn.omonschau.de/images/logos/wp_login_logo_omonschau.png" as the custom login logo
+function custom_login_logo() {
+    echo '<style>
+        #login h1 a {
+            background-image: url("https://cdn.omonschau.de/images/logos/wp_login_logo_omonschau.png");
+            background-size: contain;
+            width: 100%;
+            height: 100px;
+        }
+    </style>';
+}
+add_action('login_head', 'custom_login_logo');
+
 ?>
