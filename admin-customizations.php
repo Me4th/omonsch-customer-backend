@@ -35,13 +35,24 @@ add_action('admin_menu', 'customize_admin_menu', 999);
 function ensure_menu_access_for_customer() {
     $role = get_role('kunde');
     if ($role) {
-        $role->add_cap('edit_theme_options');    // Enable Customizer and Appearance options
-        $role->add_cap('edit_pages');            // Enable access to Pages for the "Kunde" role
-        $role->add_cap('edit_published_pages');  // Enable editing published pages
-        $role->add_cap('edit_others_pages');     // Enable editing others' pages
-        $role->add_cap('edit_others_posts');     // Enable editing others' posts
-        $role->add_cap('edit_published_posts');     // Enable editing others' posts
-        $role->add_cap('upload_files');         // Ensure media files can be managed
+        $role->add_cap('edit_theme_options');
+        $role->add_cap('edit_posts');
+        $role->add_cap('delete_posts');
+        $role->add_cap('delete_others_posts');
+        $role->add_cap('edit_pages');
+        $role->add_cap('delete_pages');
+        $role->add_cap('delete_others_pages');
+        $role->add_cap('edit_published_pages');
+        $role->add_cap('delete_private_pages');
+        $role->add_cap('delete_private_posts');
+        $role->add_cap('edit_private_pages');
+        $role->add_cap('edit_private_posts');
+        $role->add_cap('publish_posts');
+        $role->add_cap('publish_pages');
+        $role->add_cap('edit_others_pages');
+        $role->add_cap('edit_others_posts');
+        $role->add_cap('edit_published_posts');
+        $role->add_cap('upload_files');
     }
 }
 add_action('admin_init', 'ensure_menu_access_for_customer');
